@@ -1,0 +1,97 @@
+// To execute this file with FreeFem, type 
+// FreeFem++ LaplacianEigenvalue.edp
+
+// This has greatly been inspired by : https://doc.freefem.org/models/eigen-value-problems.html
+
+//////////////////////////
+//       Parameter      //
+//////////////////////////
+real h = 0.05;
+int nev = 20; //number of wanted eigenvalues
+
+//////////////////////////
+//          Mesh        //
+//////////////////////////
+int N = 1;
+int Nm=floor(1./h); //Number of FE nodes on a unit segment
+int Nc=Nm*N;			 //Total number of FE nodes on [0,N]
+mesh Th=square(Nc,Nc,[N*x,N*y]);
+
+//Finite Element
+fespace Vh(Th,P1);
+
+/////////////////////////////////////////////////////
+// Ordering the Analytical Eigenvalue of Laplacian //
+/////////////////////////////////////////////////////
+int M = 10; //choose M sufficiently large in front of nev
+int p = 0; //compteur
+real[int] eigenvalue(M*M); // store the M*M first eigenvalue
+real[int, int] pulse(M*M, 2); // the pulse of (n^2 +m^2)*pi^2 is (n,m)
+int[int] index(M*M);
+
+for (int n = 1; n < M+1; n++){
+    for (int m = 1; m < M+1; m++){
+        eigenvalue[p] = (n*n+m*m)*pi*pi;
+        pulse(p, 0) = n;
+        pulse(p, 1) = m;
+        index[p] = p;
+        p+=1;
+    }
+}
+sort(eigenvalue, index);
+
+/*
+// Test to see if the lists are well ordered
+cout << "eigenvalue : " << eigenvalue <<endl << endl;
+cout << "index : " << index << endl << endl;
+sort(eigenvalue, index);
+cout << "eigenvalue sorted : " << eigenvalue <<endl << endl;
+cout << "index sorted : " << index << endl << endl;
+for (int n = 0; n < M*M; n++){
+    cout << "ev : " << eigenvalue[n] << " .   (n, m) : (" << pulse(index[n], 0) << ", " << pulse(index[n], 1) << ")" << endl;
+}*/
+
+///////////////////////////////////////////////////
+// Computing The eigenvectors of Laplacian on Th //
+///////////////////////////////////////////////////
+Vh[int] eigenvector(nev);
+
+for (int i = 0; i < nev; i++){
+    int n = pulse(index[i], 0);
+    int m = pulse(index[i], 1);
+    eigenvector[i] = sin(pi*n*x)*sin(pi*m*y);
+    plot(eigenvector[i], wait=true);
+}
+
+
+
+/* 
+// Another way of finding the eigenvectors/eigenvalue (to be adapt in the case of a more tricky operator than laplacian)
+// Laplacian operator
+Vh u1, u2;
+real sigma = 246.74; // shift
+varf op (u1, u2) = int2d(Th)(dx(u1)*dx(u2) + dy(u1)*dy(u2) - sigma*u1*u2) + on(1, 2, 3, 4, u1=0);
+matrix OP = op(Vh, Vh, solver=Crout, factorize=1); //UMFPACK, //Crout //Which One ?
+//int nOP = OP.n;
+//cout <<"nOp : " << nOP << endl;
+//cout <<"h^2 : " << (Nm*Nm) << endl;
+
+varf b ([u1], [u2]) = int2d(Th)(u1*u2); //no boundary condition
+matrix B = b(Vh, Vh, solver=CG, eps=1e-20);
+
+// Solve and Store
+real[int] ev(nev); //to store the nev eigenvalue
+Vh[int] eV(nev); //to store the nev eigenvector
+
+int k = EigenValue(OP, B, sym=true, sigma=sigma, value=ev, vector=eV, tol=1e-10, maxit=0, ncv=0);
+
+// Plot
+for (int i = 0; i < k; i++){
+    u1 = eV[i];
+    real gg = int2d(Th)(dx(u1)*dx(u1) + dy(u1)*dy(u1));
+    real mm = int2d(Th)(u1*u1) ;
+    cout << "lambda[" << i << "] = " << ev[i] << ", err= " << gg - (ev[i])*mm << endl;
+
+    //plot(eV[i], cmm="Eigen Vector "+i+" value ="+ev[i], wait=true, value=true);
+}
+*/
