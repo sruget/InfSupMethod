@@ -26,6 +26,7 @@ def loadMatrix(filename):
 
         M = np.zeros((P, P))
         for i, line in enumerate(f):
+            #print("l : ", line)
             l = line[:-1]
             value = l.split(",")
             for j in range(P):
