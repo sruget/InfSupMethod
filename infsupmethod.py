@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 from numpy.linalg import eigh
 from loadMatrix import *
 
+##################
+### Algorithme ###
+##################
+
 mu = 0. ## Be careful, mu !=0 implies to change the way the basic component of G0, G1, G2 are computed (u_eps).
 alpha = 0.1
 
@@ -31,11 +35,11 @@ def inf(G0, G1, G2, f):
     return(-num/(2*denum) - mu)
 
 
-def main(Winit=0., itermax=10, threshold=10**(-10)):
+def main(filenameG01, filenameG02, filenameG03, filenameG11, filenameG12, filenameG2, Winit=0., itermax=100, threshold=10**(-20)):
     # Loading the Matrix G0, G1, G2
-    G0 = assembleG0('Precomputation_G01.txt', 'Precomputation_G02.txt', 'Precomputation_G03.txt')
-    G1 = assembleG1('Precomputation_G11.txt', 'Precomputation_G12.txt')
-    G2 = assembleG2('Precomputation_G2.txt')
+    G0 = assembleG0(filenameG01, filenameG02, filenameG03)
+    G1 = assembleG1(filenameG11, filenameG12)
+    G2 = assembleG2(filenameG2)
     P = np.shape(G0)[0]
 
     #Initialization
@@ -60,4 +64,37 @@ def main(Winit=0., itermax=10, threshold=10**(-10)):
         p+=1
     return(Val_ap, f, W)
 
-main()
+########################
+### Plot Convergence ###
+########################
+
+plt.rcParams['text.usetex'] = True
+
+V_star = -1./(8*np.pi*np.pi)
+datedir = ["11_12_2022", "10_12_2022"]
+datefile = ["111222", "101222"]
+N_date = len(datedir)
+epslist = ["064", "032", "016", "008"]
+epsilon = np.array([0.64, 0.32, 0.16, 0.08])
+N_eps = len(epsilon)
+error = np.zeros((N_eps, N_date))
+for d in range(N_date) :
+    for e, eps in enumerate(epslist):
+        filenameG01 = "./results/"+str(datedir[d])+"/Precomputation_G01_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        filenameG02 = "./results/"+str(datedir[d])+"/Precomputation_G02_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        filenameG03 = "./results/"+str(datedir[d])+"/Precomputation_G03_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        filenameG11 = "./results/"+str(datedir[d])+"/Precomputation_G11_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        filenameG12 = "./results/"+str(datedir[d])+"/Precomputation_G12_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        filenameG2  = "./results/"+str(datedir[d])+"/Precomputation_G2_eps"+str(eps)+"_"+str(datefile[d])+".txt"
+        V_bar = main(filenameG01, filenameG02, filenameG03, filenameG11, filenameG12, filenameG2)[2]
+        error[e, d] = np.abs(V_bar-V_star)/np.abs(V_star)
+
+plt.plot(epsilon, error[:, 0], color='red', marker='+', label='$h=0.001$')
+plt.plot(epsilon, error[:, 1], color='blue', marker='+', label='$h=0.005$')
+plt.legend()
+plt.title("Relativ error, $|V^\star - \overline{V}|/|V^\star|$")
+plt.xlabel("$\epsilon$")
+plt.ylabel("Relativ error")
+plt.xscale("log")
+plt.yscale("log")
+plt.show()
