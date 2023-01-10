@@ -30,7 +30,7 @@ def loadMatrix(filename):
             l = line[:-1]
             value = l.split(",")
             for j in range(P):
-                M[i,j] =float(value[j])
+                M[i,j] = float(value[j])
     f.close()
     return(M)
 
@@ -42,7 +42,7 @@ def assembleG0(filenameG01, filenameG02, filenameG03):
     G02 = loadMatrix(filenameG02)
     G03 = loadMatrix(filenameG03)
     G0 = G01 - G02 - np.transpose(G02) + G03
-    print(G0)
+    #print(G0)
     return(G0)
 
 def assembleG1(filenameG11, filenameG12):

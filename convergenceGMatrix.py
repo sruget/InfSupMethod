@@ -5,8 +5,8 @@ from loadMatrix import loadMatrix
 plt.rcParams['text.usetex'] = True
 
 ## To Be adaptated
-datedir = ["10_12_2022", "11_12_2022"]
-datefile = ["101222", "111222"]
+datedir = ["10_12_2022", "11_12_2022", "12_12_2022"]
+datefile = ["101222", "111222", "121222"]
 matrixClass = ["G01", "G02", "G03", "G11", "G12", "G2"]
 epslist = ["064", "032", "016", "008", "004", "002", "001"]
 epsilon = np.array([0.64, 0.32, 0.16, 0.08, 0.04, 0.02, 0.01])
@@ -83,15 +83,20 @@ print(error)
 
 plt.plot(epsilon, error[:, 0, 0], color='red', marker='+', label='G01 $= \langle u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.001$')
 plt.plot(epsilon, error[:, 0, 1], color='red', marker='+', label='G01 $= \langle u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.005$')
+plt.plot(epsilon, error[:, 0, 2], color='red', marker='+', label='G01 $= \langle u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.0005$')
 plt.plot(epsilon, error[:, 1, 0], color='blue', marker='+', label='G02 $= \langle u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.001$')
 plt.plot(epsilon, error[:, 1, 1], color='blue', marker='+', label='G02 $= \langle u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.005$')
+plt.plot(epsilon, error[:, 1, 2], color='blue', marker='+', label='G02 $= \langle u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.0005$')
 #plt.plot(epsilon, error[:, 2, 0], color='green', marker='+', label='G03 $= \langle (-\Delta)^{-1}(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$')
 plt.plot(epsilon, error[:, 3, 0], color='purple', marker='+', label='G11 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.001$')
 plt.plot(epsilon, error[:, 3, 1], color='purple', marker='+', label='G11 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.005$')
+plt.plot(epsilon, error[:, 3, 2], color='purple', marker='+', label='G11 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.0005$')
 plt.plot(epsilon, error[:, 4, 0], color='brown', marker='+', label='G12 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.001$')
 plt.plot(epsilon, error[:, 4, 1], color='brown', marker='+', label='G12 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.005$')
+plt.plot(epsilon, error[:, 4, 2], color='brown', marker='+', label='G12 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}(f_j)$' + r'$\rangle$' + '$ h=0.0005$')
 plt.plot(epsilon, error[:, 5, 0], color='black', marker='+', label='G2 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.001$')
 plt.plot(epsilon, error[:, 5, 1], color='black', marker='+', label='G2 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.005$')
+plt.plot(epsilon, error[:, 5, 2], color='black', marker='+', label='G2 $= \langle (-\Delta)^{-1}u_\epsilon(f_i),(-\Delta)^{-1}u_\epsilon(f_j)$' + r'$\rangle$' + '$ h=0.0005$')
 plt.legend()
 plt.title("Relativ error, $|||G^\star - G_\epsilon|||/|||G^\star|||$")
 plt.xlabel("$\epsilon$")
