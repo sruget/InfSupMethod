@@ -1,4 +1,4 @@
-// To execute this file with FreeFem, type 
+// To execute this file with FreeFem, type
 // FreeFem++ LaplacianEigenvalue.edp
 
 // This has greatly been inspired by : https://doc.freefem.org/models/eigen-value-problems.html
@@ -6,16 +6,15 @@
 //////////////////////////
 //       Parameter      //
 //////////////////////////
-real eps = 0.05;
-real h = eps/50.; //gamma max = eps/h_min where h_min=10**(-2)/25
-int nev = 20; //number of wanted eigenvalues
+real h = 0.001;
+int nev = 10; //number of wanted eigenvalues
 
 //////////////////////////
 //          Mesh        //
 //////////////////////////
 int N = 1;
 int Nm=floor(1./h); //Number of FE nodes on a unit segment
-int Nc=Nm*N;			 //Total number of FE nodes on [0,N]
+int Nc=Nm*N;                     //Total number of FE nodes on [0,N]
 mesh Th=square(Nc,Nc,[N*x,N*y]);
 
 //Finite Element
@@ -40,7 +39,9 @@ for (int n = 1; n < M+1; n++){
     }
 }
 sort(eigenvalue, index);
-
+for (int n = 0; n < nev; n++){
+        cout << "n :" << n << ", Ev : " << eigenvalue[n]/(pi*pi) << endl;;
+}
 
 // Test to see if the lists are well ordered
 /*cout << "eigenvalue : " << eigenvalue <<endl << endl;
@@ -71,7 +72,7 @@ for (int i = 0; i < nev; i++){
     //plot(eigenvector[i], wait=true,value=true,fill=true, cmm="eigenvectors p="+i);
 }
 
-/* 
+/*
 // Another way of finding the eigenvectors/eigenvalue (to be adapt in the case of a more tricky operator than laplacian)
 // Laplacian operator
 Vh u1, u2;

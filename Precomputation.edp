@@ -1,182 +1,210 @@
-// To execute this file with FreeFem, type 
+// To execute this file with FreeFem, type
 // FreeFem++ Precomputation.edp
 
 include "LaplacianEigenvalue.edp"
+load "MUMPS"
 
 ////////////////////
 // Precomputation //
 ////////////////////
 
 func defcoeff = sin(2*pi*x);
-func coeff = defcoeff(x/eps,y/eps)/eps;
-Vh coeffoscillating = coeff;
+real[int] epslist = [0.48, 1./3, 1./8, 1./9];
+real[int] name = [48, 33, 125, 11];
 
-// For each p, compute u_p solution of (-Lap) u_p = f_p where f_p is the p-th eigenvalue of laplacian
-Vh[int] LapInvLapEv(nev);
-for (int p = 0; p < nev; p++){
-    Vh up, v;
-    Vh fp = eigenvector[p];
-    {
-    solve LapInvPb(up,v)=
-	    int2d(Th)(dx(up)*dx(v)+dy(up)*dy(v))
-	    - int2d(Th)(fp*v) 
-        + on(1, 2, 3, 4, up=0);
+int Neps = epslist.n;
+string date = "_241222.txt";
+
+for (int i=0; i < Neps; i++) {
+    real eps = epslist[i];
+    cout << "eps : " << eps << endl;
+    func coeff = defcoeff(x/eps,y/eps)/eps;
+    Vh coeffoscillating = coeff;
+
+    // For each p, compute u_p solution of (-Lap) u_p = f_p where f_p is the p-th eigenvalue of laplacian
+    cout << "Compute Inverse of Lap eigenvalue" << endl;
+    Vh[int] LapInvLapEv(nev);
+    for (int p = 0; p < nev; p++){
+        //Vh up, v;
+        //Vh fp = eigenvector[p];
+        //{
+        //solve LapInvPb(up,v, solver=sparsesolver)=
+        //        int2d(Th)(dx(up)*dx(v)+dy(up)*dy(v))
+        //        - int2d(Th)(fp*v)
+        //    + on(1, 2, 3, 4, up=0);
+        //}
+
+        //cout << "Eigenvalue p = " << p << ", ev : << eigenvalue[p]/(pi*pi) << endl;
+        LapInvLapEv[p] = eigenvector[p]/eigenvalue[p];
+        //plot(up, wait=true, value=true,fill=true, cmm="inverse Laplacian solution, p="+p);
     }
-    LapInvLapEv[p] = up;
-    plot(up, wait=true, value=true,fill=true, cmm="inverse Laplacian solution, p="+p);
-}
 
-// For each p, we compute u_p^eps sol de (-Lap)u_p^eps + V_epsu_p^eps = f_p
-Vh[int] SolEps(nev);
-for (int p = 0; p < nev; p++){
-    Vh ueps, v;
-    Vh fp = eigenvector[p];
-    {
-    solve Schrodinger(ueps,v)=
-	    int2d(Th)(dx(ueps)*dx(v)+dy(ueps)*dy(v))
-        + int2d(Th)(coeffoscillating*ueps*v)
-	    - int2d(Th)(fp*v) 
-        + on(1, 2, 3, 4, ueps=0);
-    }
-    SolEps[p] = ueps;
-    plot(ueps, wait=true, value=true,fill=true, cmm="solution oscillante associe a ev f_p, p="+p);
-}
-
-// For each p, we compute z_p sol of (-Lap)z_p = u_p^eps
-Vh[int] LapInvSolEps(nev);
-for (int p = 0; p < nev; p++){
-    Vh zp, v;
-    Vh ueps = SolEps[p];
-    {
-    solve Schrodinger(zp,v)=
-	    int2d(Th)(dx(zp)*dx(v)+dy(zp)*dy(v))
-	    - int2d(Th)(ueps*v) 
-        + on(1, 2, 3, 4, zp=0);
-    }
-    LapInvSolEps[p] = zp;
-    plot(zp, wait=true, value=true,fill=true, cmm="inverse Laplacian solution oscillante, p="+p);
-}
-
-/////////////////////////////////
-// Saving quantity of interest //
-/////////////////////////////////
-
-ofstream file01("Precomputation_G01.txt");
-file01 << "Parameters" << endl;
-file01 << "eps = " << eps <<endl;
-file01 << "h = " << h << endl;
-file01 << "P = " << nev << endl;
-file01 << "Gij = ( u_eps(f_i) * u_eps(f_j) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh uepsi = SolEps[i];
-    for (int j = 0; j < nev; j++){
-        Vh uepsj = SolEps[j];
-        real G01ij = int2d(Th)(uepsi*uepsj);
-        file01 << G01ij;
-        if (j!=nev-1){
-            file01 << ",";
+    // For each p, we compute u_p^eps sol de (-Lap)u_p^eps + V_epsu_p^eps = f_p
+    cout << "Compute u_eps(f_j)" << endl;
+    Vh[int] SolEps(nev);
+    for (int p = 0; p < nev; p++){
+        Vh ueps, v;
+        Vh fp = eigenvector[p];
+        {
+        solve Schrodinger(ueps,v, solver=sparsesolver)=
+                int2d(Th)(dx(ueps)*dx(v)+dy(ueps)*dy(v))
+            + int2d(Th)(coeffoscillating*ueps*v)
+                - int2d(Th)(fp*v)
+            + on(1, 2, 3, 4, ueps=0);
         }
+        SolEps[p] = ueps;
+        //plot(ueps, wait=true, value=true,fill=true, cmm="solution oscillante associe a ev f_p, p="+p);
+    }
+
+    // For each p, we compute z_p sol of (-Lap)z_p = u_p^eps
+    cout << "Compute Inverse of u_eps(f_j)" << endl;
+    Vh[int] LapInvSolEps(nev);
+    for (int p = 0; p < nev; p++){
+        Vh zp, v;
+        Vh ueps = SolEps[p];
+        {
+        solve Schrodinger(zp,v, solver=sparsesolver)=
+                int2d(Th)(dx(zp)*dx(v)+dy(zp)*dy(v))
+                - int2d(Th)(ueps*v)
+            + on(1, 2, 3, 4, zp=0);
+        }
+        LapInvSolEps[p] = zp;
+        //plot(zp, wait=true, value=true,fill=true, cmm="inverse Laplacian solution oscillante, p="+p);
+    }
+
+    /////////////////////////////////
+    // Saving quantity of interest //
+    /////////////////////////////////
+    cout << "file01" << endl;
+    ofstream file01("Precomputation_G01_eps0"+name[i]+date);
+    file01 << "Parameters" << endl;
+    file01 << "eps = " << eps <<endl;
+    file01 << "h = " << h << endl;
+    file01 << "P = " << nev << endl;
+    file01 << "Gij = ( u_eps(f_i) * u_eps(f_j) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh uepsi = SolEps[i];
+        for (int j = 0; j < nev; j++){
+            Vh uepsj = SolEps[j];
+            real G01ij = int2d(Th)(uepsi*uepsj);
+            file01 << G01ij;
+            if (j!=nev-1){
+                file01 << ",";
+            }
+        }
+        file01 << endl;
     }
     file01 << endl;
-}
-file01.flush;
+    file01.flush;
 
-ofstream file02("Precomputation_G02.txt");
-file02 << "Parameters" << endl;
-file02 << "eps = " << eps <<endl;
-file02 << "h = " << h << endl;
-file02 << "P = " << nev << endl;
-file02 << "Gij = ( u_eps(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh uepsi = SolEps[i];
-    for (int j = 0; j < nev; j++){
-        Vh upj = LapInvLapEv[j];
-        real G02ij = int2d(Th)(uepsi*upj);
-        file02 << G02ij;
-        if (j!=nev-1){
-            file02 << ",";
+    cout << "file02" << endl;
+    ofstream file02("Precomputation_G02_eps0"+name[i]+date);
+    file02 << "Parameters" << endl;
+    file02 << "eps = " << eps <<endl;
+    file02 << "h = " << h << endl;
+    file02 << "P = " << nev << endl;
+    file02 << "Gij = ( u_eps(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh uepsi = SolEps[i];
+        for (int j = 0; j < nev; j++){
+            Vh upj = LapInvLapEv[j];
+            real G02ij = int2d(Th)(uepsi*upj);
+            file02 << G02ij;
+            if (j!=nev-1){
+                file02 << ",";
+            }
         }
+        file02 << endl;
     }
     file02 << endl;
-}
-file02.flush;
+    file02.flush;
 
-ofstream file03("Precomputation_G03.txt");
-file03 << "Parameters" << endl;
-file03 << "eps = " << eps <<endl;
-file03 << "h = " << h << endl;
-file03 << "P = " << nev << endl;
-file03 << "Gij = ( (-Lap^(-1))(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh upi = LapInvLapEv[i];
-    for (int j = 0; j < nev; j++){
-        Vh upj = LapInvLapEv[j];
-        real G03ij = int2d(Th)(upi*upj);
-        file03 << G03ij;
-        if (j!=nev-1){
-            file03 << ",";
+    cout << "file03" << endl;
+    ofstream file03("Precomputation_G03_eps0"+name[i]+date);
+    file03 << "Parameters" << endl;
+    file03 << "eps = " << eps <<endl;
+    file03 << "h = " << h << endl;
+    file03 << "P = " << nev << endl;
+    file03 << "Gij = ( (-Lap^(-1))(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh upi = LapInvLapEv[i];
+        for (int j = 0; j < nev; j++){
+            Vh upj = LapInvLapEv[j];
+            real G03ij = int2d(Th)(upi*upj);
+            file03 << G03ij;
+            if (j!=nev-1){
+                file03 << ",";
+            }
         }
+        file03 << endl;
     }
     file03 << endl;
-}
-file03.flush;
+    file03.flush;
 
-ofstream file11("Precomputation_G11.txt");
-file11 << "Parameters" << endl;
-file11 << "eps = " << eps <<endl;
-file11 << "h = " << h << endl;
-file11 << "P = " << nev << endl;
-file11 << "Gij = ( (-Lap^(-1))(u_eps(f_i) * u_eps(f_j) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh zpi = LapInvSolEps[i];
-    for (int j = 0; j < nev; j++){
-        Vh uepsj = SolEps[j];
-        real G11ij = int2d(Th)(zpi*uepsj);
-        file11 << G11ij;
-        if (j!=nev-1){
-            file11 << ",";
+    cout << "file11" << endl;
+    ofstream file11("Precomputation_G11_eps0"+name[i]+date);
+    file11 << "Parameters" << endl;
+    file11 << "eps = " << eps <<endl;
+    file11 << "h = " << h << endl;
+    file11 << "P = " << nev << endl;
+    file11 << "Gij = ( (-Lap^(-1))(u_eps(f_i) * u_eps(f_j) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh zpi = LapInvSolEps[i];
+        for (int j = 0; j < nev; j++){
+            Vh uepsj = SolEps[j];
+            real G11ij = int2d(Th)(zpi*uepsj);
+            file11 << G11ij;
+            if (j!=nev-1){
+                file11 << ",";
+            }
         }
+        file11 << endl;
     }
     file11 << endl;
-}
-file11.flush;
+    file11.flush;
 
-ofstream file12("Precomputation_G12.txt");
-file12 << "Parameters" << endl;
-file12 << "eps = " << eps <<endl;
-file12 << "h = " << h << endl;
-file12 << "P = " << nev << endl;
-file12 << "Gij = ( (-Lap^(-1))(u_eps(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh zpi = LapInvSolEps[i];
-    for (int j = 0; j < nev; j++){
-        Vh upj = LapInvLapEv[j];
-        real G12ij = int2d(Th)(zpi*upj);
-        file12 << G12ij;
-        if (j!=nev-1){
-            file12 << ",";
+    cout << "file12" << endl;
+    ofstream file12("Precomputation_G12_eps0"+name[i]+date);
+    file12 << "Parameters" << endl;
+    file12 << "eps = " << eps <<endl;
+    file12 << "h = " << h << endl;
+    file12 << "P = " << nev << endl;
+    file12 << "Gij = ( (-Lap^(-1))(u_eps(f_i) * (-Lap^(-1))(f_j) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh zpi = LapInvSolEps[i];
+        for (int j = 0; j < nev; j++){
+            Vh upj = LapInvLapEv[j];
+            real G12ij = int2d(Th)(zpi*upj);
+            file12 << G12ij;
+            if (j!=nev-1){
+                file12 << ",";
+            }
         }
+        file12 << endl;
     }
     file12 << endl;
-}
-file12.flush;
+    file12.flush;
 
-ofstream file2("Precomputation_G2.txt");
-file2 << "Parameters" << endl;
-file2 << "eps = " << eps <<endl;
-file2 << "h = " << h << endl;
-file2 << "P = " << nev << endl;
-file2 << "G_ij = ( (-Lap^(-1))(u_eps(f_i)) * (-Lap^(-1))(u_eps(f_j)) )_ij" << endl;
-for (int i = 0; i < nev; i++){
-    Vh zpi = LapInvSolEps[i];
-    for (int j = 0; j < nev; j++){
-        Vh zpj = LapInvSolEps[j];
-        real G2ij = int2d(Th)(zpi*zpj);
-        file2 << G2ij;
-        if (j!=nev-1){
-            file2 << ",";
+    cout << "file2" << endl;
+    ofstream file2("Precomputation_G2_eps0"+name[i]+date);
+    file2 << "Parameters" << endl;
+    file2 << "eps = " << eps <<endl;
+    file2 << "h = " << h << endl;
+    file2 << "P = " << nev << endl;
+    file2 << "G_ij = ( (-Lap^(-1))(u_eps(f_i)) * (-Lap^(-1))(u_eps(f_j)) )_ij" << endl;
+    for (int i = 0; i < nev; i++){
+        Vh zpi = LapInvSolEps[i];
+        for (int j = 0; j < nev; j++){
+            Vh zpj = LapInvSolEps[j];
+            real G2ij = int2d(Th)(zpi*zpj);
+            file2 << G2ij;
+            if (j!=nev-1){
+                file2 << ",";
+            }
         }
+        file2 << endl;
     }
     file2 << endl;
+    file2.flush;
+    cout << endl;
 }
-file2.flush;
